@@ -26,6 +26,8 @@ export const uniforms = {
   uBgMode: { value: 2 }, // start on color-cube for verification
   uGridOverlay: { value: false },
   uCubeMap: { value: bg.cubeTexture },
+  uStepSize: { value: 0.04 },
+  uMaxSteps: { value: 600 },
 };
 
 function updateCamera() {
