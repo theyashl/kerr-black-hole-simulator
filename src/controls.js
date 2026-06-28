@@ -28,6 +28,16 @@ export function initControls(settings, onChange) {
      .name('background').onChange(onChange);
   gui.add(settings, 'gridOverlay').name('grid overlay').onChange(onChange);
 
+  const disk = gui.addFolder('Disk');
+  disk.add(settings, 'diskEnabled').name('disk on').onChange(onChange);
+  disk.add(settings, 'diskInnerMode', { 'ISCO (auto)': 'ISCO', Manual: 'Manual' })
+      .name('inner edge').onChange(onChange);
+  disk.add(settings, 'diskInnerManual', 1.5, 20, 0.5).name('inner r (manual)').onChange(onChange);
+  disk.add(settings, 'diskOuter', 6, 50, 0.5).name('outer r').onChange(onChange);
+  disk.add(settings, 'diskBrightness', 0.0, 3.0, 0.05).name('brightness').onChange(onChange);
+  disk.add(settings, 'diskAnimate').name('animate').onChange(onChange);
+  disk.add(settings, 'diskSpeed', 0.0, 5.0, 0.1).name('spin speed').onChange(onChange);
+
   // Advanced perf knobs (also moved by the preset above).
   const perf = gui.addFolder('Performance');
   perf.add(settings, 'resolutionScale', 0.25, 1.0, 0.05).name('resolution').onChange(onChange);
