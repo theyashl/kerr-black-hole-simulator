@@ -4,6 +4,7 @@ import fragmentShader from '../shaders/kerr.frag.glsl?raw';
 import { loadBackground } from './backgrounds.js';
 import { orbitToPosition, zamoTetrad } from './camera.js';
 import { initControls, initOrbit } from './controls.js';
+import { iscoRadius } from './physics/disk.js';
 
 const canvas = document.getElementById('app');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
@@ -32,6 +33,13 @@ export const uniforms = {
   uCubeMap: { value: bg.cubeTexture },
   uStepSize: { value: 0 },
   uMaxSteps: { value: 0 },
+  uDiskEnabled: { value: true },
+  uDiskInner: { value: 6 },
+  uDiskOuter: { value: 20 },
+  uDiskBrightness: { value: 1.0 },
+  uDiskAnimate: { value: false },
+  uDiskSpeed: { value: 1.0 },
+  uTime: { value: 0 },
 };
 
 const settings = {
@@ -40,6 +48,8 @@ const settings = {
   // stepSize is the distance-proportional step coefficient K (~0.1 is accurate).
   quality: 'Balanced', resolutionScale: 0.6,
   stepSize: 0.1, maxSteps: 600, bgMode: 1, gridOverlay: false,
+  diskEnabled: true, diskInnerMode: 'ISCO', diskInnerManual: 6,
+  diskOuter: 20, diskBrightness: 1.0, diskAnimate: false, diskSpeed: 1.0,
 };
 
 const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
@@ -92,6 +102,13 @@ function applySettings() {
   uniforms.uMaxSteps.value = Math.round(settings.maxSteps);
   uniforms.uBgMode.value = Number(settings.bgMode);
   uniforms.uGridOverlay.value = settings.gridOverlay;
+  uniforms.uDiskEnabled.value = settings.diskEnabled;
+  uniforms.uDiskInner.value = settings.diskInnerMode === 'ISCO'
+    ? iscoRadius(settings.spin) : settings.diskInnerManual;
+  uniforms.uDiskOuter.value = settings.diskOuter;
+  uniforms.uDiskBrightness.value = settings.diskBrightness;
+  uniforms.uDiskAnimate.value = settings.diskAnimate;
+  uniforms.uDiskSpeed.value = settings.diskSpeed;
   updateCamera();
   requestRender();
 }

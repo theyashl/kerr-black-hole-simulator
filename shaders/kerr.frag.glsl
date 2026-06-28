@@ -11,7 +11,16 @@ uniform samplerCube uCubeMap;
 uniform float uStepSize;
 uniform int   uMaxSteps;
 
+uniform bool  uDiskEnabled;
+uniform float uDiskInner;
+uniform float uDiskOuter;
+uniform float uDiskBrightness;
+uniform bool  uDiskAnimate;
+uniform float uDiskSpeed;
+uniform float uTime;
+
 const float PI = 3.141592653589793;
+const float PIH = 1.5707963267948966; // pi/2
 
 // Map a unit direction on the celestial sphere to a background color.
 vec3 sampleBackground(vec3 dir) {
@@ -73,6 +82,36 @@ vec4 rhs(vec4 st, float E, float Lz, float a, out float dphi){
   return vec4(dr, dth, -dHdr, -dHdth);
 }
 
+// --- Accretion disk emission (mirrors src/physics/disk.js profile) ---
+float hash21(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float vnoise(vec2 p){
+  vec2 i=floor(p), f=fract(p);
+  float a=hash21(i), b=hash21(i+vec2(1,0)), c=hash21(i+vec2(0,1)), d=hash21(i+vec2(1,1));
+  vec2 u=f*f*(3.0-2.0*f);
+  return mix(mix(a,b,u.x), mix(c,d,u.x), u.y);
+}
+float fbm(vec2 p){
+  float s=0.0, amp=0.5;
+  for(int i=0;i<4;i++){ s+=amp*vnoise(p); p*=2.0; amp*=0.5; }
+  return s;
+}
+// Blackbody-style ramp: T in [0,1], 1 = hottest (inner edge).
+vec3 temperatureColor(float T){
+  vec3 hot  = vec3(0.85, 0.92, 1.0);  // blue-white
+  vec3 mid  = vec3(1.0,  0.6,  0.2);  // orange
+  vec3 cool = vec3(0.55, 0.05, 0.0);  // deep red
+  return T > 0.5 ? mix(mid, hot, (T-0.5)*2.0) : mix(cool, mid, T*2.0);
+}
+vec3 diskEmission(float r, float phi){
+  float Tp = pow(uDiskInner / r, 0.75);                 // profile, 1 at inner edge
+  float edge = smoothstep(uDiskInner, uDiskInner*1.08, r)
+             * (1.0 - smoothstep(uDiskOuter*0.92, uDiskOuter, r));
+  float phase = uDiskAnimate ? uDiskSpeed * uTime * pow(r, -1.5) : 0.0; // Keplerian swirl
+  float n = fbm(vec2(r*0.6, (phi + phase)*1.5));
+  float bright = Tp * edge * mix(0.45, 1.0, n) * uDiskBrightness;
+  return temperatureColor(clamp(Tp, 0.0, 1.0)) * bright;
+}
+
 void main() {
   vec2 uv = (gl_FragCoord.xy / uResolution) * 2.0 - 1.0;
   uv.x *= uResolution.x / uResolution.y;
@@ -108,10 +147,7 @@ void main() {
   bool captured = false;
   for (int i=0; i<2048; i++) {
     if (i >= uMaxSteps) break;
-    // Distance-proportional step: tiny near the horizon (accurate light bending
-    // through the photon sphere) and large in the weak field (so the ray coasts
-    // out to the sky in a feasible number of steps). uStepSize is the
-    // proportionality coefficient K; ~0.1 tracks the analytic shadow to ~1%.
+    float thPrev = st.y, rPrev = st.x, phiPrev = phi; // pre-step state for disk crossing
     float dl = clamp(uStepSize * (st.x - rH), 0.005, 50.0);
     float dphi;
     vec4 k1 = rhs(st, E, Lz, a, dphi); float dp1=dphi;
@@ -123,6 +159,21 @@ void main() {
 
     // keep theta off the poles so sin(theta) never hits 0 (avoids NaN on axis crossing)
     st.y = clamp(st.y, 1e-3, PI - 1e-3);
+
+    // Accretion disk: opaque first crossing of the equatorial plane within [in,out].
+    if (uDiskEnabled) {
+      float dPrev = thPrev - PIH;
+      float dCur  = st.y  - PIH;
+      if (dPrev * dCur < 0.0) {                       // crossed the equator this step
+        float frac = dPrev / (dPrev - dCur);
+        float rHit = mix(rPrev, st.x, frac);
+        if (rHit >= uDiskInner && rHit <= uDiskOuter) {
+          float phiHit = mix(phiPrev, phi, frac);
+          gl_FragColor = vec4(diskEmission(rHit, phiHit), 1.0);
+          return;
+        }
+      }
+    }
 
     if (st.x < rH) { captured = true; break; } // fell through the horizon -> shadow
     if (st.x > 300.0) break;                    // escaped to the sky
