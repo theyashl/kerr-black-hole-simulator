@@ -148,9 +148,14 @@ void main() {
   for (int i=0; i<2048; i++) {
     if (i >= uMaxSteps) break;
     float thPrev = st.y, rPrev = st.x, phiPrev = phi; // pre-step state for disk crossing
-    float dl = clamp(uStepSize * (st.x - rH), 0.005, 50.0);
     float dphi;
     vec4 k1 = rhs(st, E, Lz, a, dphi); float dp1=dphi;
+    // Distance-proportional step, additionally capped so |dtheta| and |dphi| per
+    // step stay small. This resolves the latitudinal turning point of near-axial
+    // (small L_z) rays instead of overshooting it into the pole -> removes the
+    // bead artifact along the spin axis. Reuses k1, so no extra rhs cost.
+    float dl = clamp(uStepSize * (st.x - rH), 0.005, 50.0);
+    dl = min(dl, 0.05 / max(max(abs(k1.y), abs(dp1)), 1e-9));
     vec4 k2 = rhs(st+0.5*dl*k1, E, Lz, a, dphi); float dp2=dphi;
     vec4 k3 = rhs(st+0.5*dl*k2, E, Lz, a, dphi); float dp3=dphi;
     vec4 k4 = rhs(st+dl*k3, E, Lz, a, dphi); float dp4=dphi;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rk4Step, horizonOuter, reflectPole } from '../src/physics/kerr.js';
+import { rk4Step, rhs, horizonOuter, reflectPole } from '../src/physics/kerr.js';
 import { zamoTetrad, covMetric } from '../src/camera.js';
 import { iscoRadius, equatorialCrossingFrac } from '../src/physics/disk.js';
 
@@ -29,7 +29,11 @@ function trace(uvx, uvy, { a, r0, th0, rIn, rOut }) {
   const rH = horizonOuter(a) + 1e-2;
   for (let i = 0; i < 800; i++) {
     const thPrev = st.theta, rPrev = st.r;
-    const dl = Math.min(Math.max(0.1 * (st.r - rH), 0.005), 50);
+    // distance-proportional step, capped so |dtheta|,|dphi| per step stay small
+    // (resolves near-axial turning points). Mirrors the shader.
+    const k = rhs(st, consts);
+    let dl = Math.min(Math.max(0.1 * (st.r - rH), 0.005), 50);
+    dl = Math.min(dl, 0.05 / Math.max(Math.abs(k.dtheta), Math.abs(k.dphi), 1e-9));
     st = rk4Step(st, consts, dl);
     const refl = reflectPole(st.theta, st.phi, st.ptheta);
     st.theta = refl.theta; st.phi = refl.phi; st.ptheta = refl.ptheta;
@@ -61,5 +65,16 @@ describe('spin-axis seam (pole pass-through)', () => {
     // An upward axial ray reaches the disk (it passes over/through the pole),
     // matching its neighbor instead of escaping to sky.
     expect(trace(0, 0.25, cfg)).toBe('disk');
+  });
+
+  it('the near-axis band is uniform — no bead oscillation', () => {
+    // The residual bead artifact lived in a thin band of small-L_z rays right
+    // beside the axis (uvx ~0.003-0.012), which the angular step limiter resolves.
+    // At a background uvy the whole band must map to the same outcome.
+    const uvy = 0.55;
+    const expected = trace(0.04, uvy, cfg); // off-band reference (sky)
+    for (const uvx of [0, 0.003, 0.006, 0.012]) {
+      expect(trace(uvx, uvy, cfg), `uvx=${uvx}`).toBe(expected);
+    }
   });
 });
