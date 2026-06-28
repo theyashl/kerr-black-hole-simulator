@@ -13,6 +13,12 @@ export function diskTemperature(r, rIn) {
   return Math.pow(rIn / r, 0.75);
 }
 
+// Ensure the outer radius sits above the inner edge (avoids a zero/negative-width
+// annulus when inner is set larger than outer in manual mode).
+export function clampDiskOuter(inner, outer) {
+  return Math.max(outer, inner * 1.1);
+}
+
 // If theta crosses pi/2 between the two states, return the interpolation
 // fraction in (0,1) of the crossing; otherwise null.
 export function equatorialCrossingFrac(thetaPrev, thetaNext) {

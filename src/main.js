@@ -4,7 +4,7 @@ import fragmentShader from '../shaders/kerr.frag.glsl?raw';
 import { loadBackground } from './backgrounds.js';
 import { orbitToPosition, zamoTetrad } from './camera.js';
 import { initControls, initOrbit } from './controls.js';
-import { iscoRadius } from './physics/disk.js';
+import { iscoRadius, clampDiskOuter } from './physics/disk.js';
 
 const canvas = document.getElementById('app');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
@@ -121,9 +121,10 @@ function applySettings() {
   uniforms.uBgMode.value = Number(settings.bgMode);
   uniforms.uGridOverlay.value = settings.gridOverlay;
   uniforms.uDiskEnabled.value = settings.diskEnabled;
-  uniforms.uDiskInner.value = settings.diskInnerMode === 'ISCO'
+  const diskInner = settings.diskInnerMode === 'ISCO'
     ? iscoRadius(settings.spin) : settings.diskInnerManual;
-  uniforms.uDiskOuter.value = settings.diskOuter;
+  uniforms.uDiskInner.value = diskInner;
+  uniforms.uDiskOuter.value = clampDiskOuter(diskInner, settings.diskOuter);
   uniforms.uDiskBrightness.value = settings.diskBrightness;
   uniforms.uDiskAnimate.value = settings.diskAnimate;
   uniforms.uDiskSpeed.value = settings.diskSpeed;

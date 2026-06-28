@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { iscoRadius, diskTemperature, equatorialCrossingFrac } from '../src/physics/disk.js';
+import { iscoRadius, diskTemperature, equatorialCrossingFrac, clampDiskOuter } from '../src/physics/disk.js';
 
 describe('iscoRadius (prograde)', () => {
   it('is 6 at a=0 (Schwarzschild)', () => {
@@ -41,5 +41,15 @@ describe('equatorialCrossingFrac', () => {
     // prev just below, next far above -> crossing near the start
     const f = equatorialCrossingFrac(Math.PI / 2 - 0.01, Math.PI / 2 + 0.09);
     expect(f).toBeCloseTo(0.1, 6);
+  });
+});
+
+describe('clampDiskOuter', () => {
+  it('leaves a valid outer radius unchanged', () => {
+    expect(clampDiskOuter(6, 20)).toBe(20);
+  });
+  it('bumps the outer radius above the inner when inverted', () => {
+    expect(clampDiskOuter(18, 6)).toBeCloseTo(18 * 1.1, 10);
+    expect(clampDiskOuter(18, 6)).toBeGreaterThan(18);
   });
 });
