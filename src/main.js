@@ -37,8 +37,9 @@ export const uniforms = {
 const settings = {
   spin: 0.7, inclinationDeg: 90, azimuthDeg: 0, radius: 20,
   // Perf knobs — 'Balanced' defaults are laptop-friendly. Crank via Quality preset.
-  quality: 'Balanced', resolutionScale: 0.65,
-  stepSize: 0.05, maxSteps: 250, bgMode: 1, gridOverlay: false,
+  // stepSize is the distance-proportional step coefficient K (~0.1 is accurate).
+  quality: 'Balanced', resolutionScale: 0.6,
+  stepSize: 0.1, maxSteps: 600, bgMode: 1, gridOverlay: false,
 };
 
 const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });

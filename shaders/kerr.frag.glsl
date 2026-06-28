@@ -105,12 +105,14 @@ void main() {
   vec4 st = vec4(r0, th0, pr, pth);
   float phi = ph0;
   float rH = horizonOuter(a) + 1e-2;
-  int status = 2;
-  vec3 escapeDir = vec3(0.0);
+  bool captured = false;
   for (int i=0; i<2048; i++) {
     if (i >= uMaxSteps) break;
-    // adaptive-ish: shrink step near horizon
-    float dl = uStepSize * clamp((st.x - rH)*0.5, 0.05, 1.0);
+    // Distance-proportional step: tiny near the horizon (accurate light bending
+    // through the photon sphere) and large in the weak field (so the ray coasts
+    // out to the sky in a feasible number of steps). uStepSize is the
+    // proportionality coefficient K; ~0.1 tracks the analytic shadow to ~1%.
+    float dl = clamp(uStepSize * (st.x - rH), 0.005, 50.0);
     float dphi;
     vec4 k1 = rhs(st, E, Lz, a, dphi); float dp1=dphi;
     vec4 k2 = rhs(st+0.5*dl*k1, E, Lz, a, dphi); float dp2=dphi;
@@ -122,18 +124,15 @@ void main() {
     // keep theta off the poles so sin(theta) never hits 0 (avoids NaN on axis crossing)
     st.y = clamp(st.y, 1e-3, PI - 1e-3);
 
-    if (st.x < rH) { status = 0; break; }       // captured
-    if (st.x > 1000.0) {                          // escaped
-      status = 1;
-      // asymptotic direction from BL (r,theta,phi) -> Cartesian on sky
-      float sr=sin(st.y), cr=cos(st.y);
-      escapeDir = normalize(vec3(sr*cos(phi), cr, sr*sin(phi)));
-      break;
-    }
+    if (st.x < rH) { captured = true; break; } // fell through the horizon -> shadow
+    if (st.x > 300.0) break;                    // escaped to the sky
   }
 
-  if (status == 0) { gl_FragColor = vec4(0.0,0.0,0.0,1.0); return; } // shadow
-  if (status == 1) { gl_FragColor = vec4(sampleBackground(escapeDir),1.0); return; }
-  // maxsteps: treat as captured-ish near hole; dark grey to spot tuning issues
-  gl_FragColor = vec4(0.02,0.0,0.02,1.0);
+  if (captured) { gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0); return; } // shadow
+
+  // Escaped (or ran out of steps while heading out): sample the sky in the ray's
+  // current outward direction. BL (r,theta,phi) -> Cartesian, y = spin axis.
+  float sr = sin(st.y), cr = cos(st.y);
+  vec3 escapeDir = normalize(vec3(sr*cos(phi), cr, sr*sin(phi)));
+  gl_FragColor = vec4(sampleBackground(escapeDir), 1.0);
 }
