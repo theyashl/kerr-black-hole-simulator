@@ -157,8 +157,13 @@ void main() {
     st  += (dl/6.0)*(k1+2.0*k2+2.0*k3+k4);
     phi += (dl/6.0)*(dp1+2.0*dp2+2.0*dp3+dp4);
 
-    // keep theta off the poles so sin(theta) never hits 0 (avoids NaN on axis crossing)
-    st.y = clamp(st.y, 1e-3, PI - 1e-3);
+    // Pass through the spin-axis pole instead of pinning theta there (mirrors
+    // reflectPole in src/physics/kerr.js). Axial L_z=0 rays legitimately cross
+    // the pole; clamping pinned them and produced a seam along the spin axis.
+    // st.w = ptheta.
+    if (st.y < 0.0)     { st.y = -st.y;         phi += PI; st.w = -st.w; }
+    else if (st.y > PI) { st.y = 2.0*PI - st.y; phi += PI; st.w = -st.w; }
+    st.y = clamp(st.y, 1e-4, PI - 1e-4); // last-resort guard against a degenerate step
 
     // Accretion disk: opaque first crossing of the equatorial plane within [in,out].
     if (uDiskEnabled) {

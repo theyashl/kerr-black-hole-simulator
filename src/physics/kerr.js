@@ -91,3 +91,13 @@ export function rk4Step(state, consts, dl) {
     phi: state.phi + (dl / 6) * (k1.dphi + 2 * k2.dphi + 2 * k3.dphi + k4.dphi),
   };
 }
+
+// Pass a geodesic through a coordinate pole (theta=0 or pi): reflect theta,
+// advance phi by pi, and flip the latitudinal momentum. Axial (L_z=0) rays
+// legitimately cross the pole; without this they get pinned at theta~0 and
+// produce an artifact line along the projected spin axis. Mirrored in the shader.
+export function reflectPole(theta, phi, ptheta) {
+  if (theta < 0) return { theta: -theta, phi: phi + Math.PI, ptheta: -ptheta };
+  if (theta > Math.PI) return { theta: 2 * Math.PI - theta, phi: phi + Math.PI, ptheta: -ptheta };
+  return { theta, phi, ptheta };
+}

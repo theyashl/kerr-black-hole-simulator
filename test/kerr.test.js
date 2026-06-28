@@ -1,7 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import {
-  sigma, delta, bigA, horizonOuter, invMetric, hamiltonian, rhs, rk4Step,
+  sigma, delta, bigA, horizonOuter, invMetric, hamiltonian, rhs, rk4Step, reflectPole,
 } from '../src/physics/kerr.js';
+
+describe('reflectPole', () => {
+  it('passes a ray through the north pole (theta<0)', () => {
+    const r = reflectPole(-0.05, 1.0, -2.0);
+    expect(r.theta).toBeCloseTo(0.05, 12);
+    expect(r.phi).toBeCloseTo(1.0 + Math.PI, 12);
+    expect(r.ptheta).toBeCloseTo(2.0, 12);
+  });
+  it('passes a ray through the south pole (theta>pi)', () => {
+    const r = reflectPole(Math.PI + 0.05, 1.0, 2.0);
+    expect(r.theta).toBeCloseTo(Math.PI - 0.05, 12);
+    expect(r.phi).toBeCloseTo(1.0 + Math.PI, 12);
+    expect(r.ptheta).toBeCloseTo(-2.0, 12);
+  });
+  it('leaves an in-range theta unchanged', () => {
+    const r = reflectPole(1.2, 0.5, 0.3);
+    expect(r.theta).toBe(1.2);
+    expect(r.phi).toBe(0.5);
+    expect(r.ptheta).toBe(0.3);
+  });
+});
 
 describe('metric quantities', () => {
   it('Schwarzschild horizon is r=2 when a=0', () => {
