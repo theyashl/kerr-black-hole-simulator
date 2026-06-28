@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { invMetric, rk4Step, horizonOuter } from '../src/physics/kerr.js';
+import { rk4Step, horizonOuter } from '../src/physics/kerr.js';
 
 describe('Schwarzschild photon sphere (a=0)', () => {
   it('a tangential photon at r=3 with b=sqrt(27) stays near r=3', () => {

@@ -19,7 +19,7 @@ export function initOrbit(canvas, settings, onChange) {
   window.addEventListener('pointerup', () => { dragging = false; });
   window.addEventListener('pointermove', (e) => {
     if (!dragging) return;
-    settings.azimuthDeg = (settings.azimuthDeg + (e.clientX - lx) * 0.3) % 360;
+    settings.azimuthDeg = ((settings.azimuthDeg + (e.clientX - lx) * 0.3) % 360 + 360) % 360;
     settings.inclinationDeg = Math.min(179, Math.max(1, settings.inclinationDeg - (e.clientY - ly) * 0.3));
     lx = e.clientX; ly = e.clientY;
     onChange();

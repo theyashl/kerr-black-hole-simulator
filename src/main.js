@@ -16,7 +16,6 @@ const bg = loadBackground(renderer);
 
 export const uniforms = {
   uResolution: { value: new THREE.Vector2() },
-  uTime: { value: 0 },
   uCamPos: { value: new THREE.Vector3() },
   uE0: { value: new THREE.Vector4() },
   uER: { value: new THREE.Vector4() },
@@ -78,9 +77,7 @@ initControls(settings, applySettings);
 initOrbit(canvas, settings, applySettings);
 applySettings();
 
-const clock = new THREE.Clock();
 function loop() {
-  uniforms.uTime.value = clock.getElapsedTime();
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }

@@ -80,8 +80,8 @@ void main() {
   // local-frame view ray: z toward hole (-er), x=ephi(right), y=eth(up)
   float t = tan(uFov*0.5);
   vec3 local = normalize(vec3(uv.x*t, uv.y*t, -1.0));
-  // tetrad components: along er = -local.z, along eth = local.y, along ephi = local.x
-  float nr = -local.z, nth = local.y, nph = local.x;
+  // tetrad components: along er = local.z (ingoing for central pixel), along eth = local.y, along ephi = local.x
+  float nr = local.z, nth = local.y, nph = local.x;
 
   // contravariant photon 4-momentum p^mu = e0 + nr*er + nth*eth + nph*ephi
   vec4 pUp = uE0 + nr*uER + nth*uETH + nph*uEPHI;
@@ -116,8 +116,11 @@ void main() {
     st  += (dl/6.0)*(k1+2.0*k2+2.0*k3+k4);
     phi += (dl/6.0)*(dp1+2.0*dp2+2.0*dp3+dp4);
 
+    // keep theta off the poles so sin(theta) never hits 0 (avoids NaN on axis crossing)
+    st.y = clamp(st.y, 1e-3, PI - 1e-3);
+
     if (st.x < rH) { status = 0; break; }       // captured
-    if (st.x > 60.0) {                            // escaped
+    if (st.x > 1000.0) {                          // escaped
       status = 1;
       // asymptotic direction from BL (r,theta,phi) -> Cartesian on sky
       float sr=sin(st.y), cr=cos(st.y);

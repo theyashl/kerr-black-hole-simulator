@@ -54,7 +54,7 @@ export function hamiltonian(state, consts) {
 export function rhs(state, consts) {
   const { r, theta, pr, ptheta } = state;
   const { E, Lz, a } = consts;
-  const { gtt, gtp, grr, gthth, gpp } = invMetric(r, theta, a);
+  const { gtp, grr, gthth, gpp } = invMetric(r, theta, a);
 
   const dr = grr * pr;
   const dtheta = gthth * ptheta;

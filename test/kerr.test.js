@@ -38,7 +38,7 @@ describe('inverse metric', () => {
 function nullRay(a) {
   const r = 10, theta = Math.PI / 2;
   const E = 1, Lz = 2.0;
-  const { grr, gthth, gtt, gtp, gpp } = invMetric(r, theta, a);
+  const { grr, gtt, gtp, gpp } = invMetric(r, theta, a);
   // Solve H=0 for pr (purely radial-ish ray): choose ptheta=0.
   // 0 = 1/2(gtt E^2 - 2 gtp E Lz + gpp Lz^2 + grr pr^2)
   const rest = gtt * E * E - 2 * gtp * E * Lz + gpp * Lz * Lz;
