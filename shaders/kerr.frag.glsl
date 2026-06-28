@@ -22,7 +22,10 @@ vec3 sampleBackground(vec3 dir) {
     return dir.z > 0.0 ? vec3(0,0,1) : vec3(1,1,0);
   }
   vec3 col;
-  if (uBgMode == 0) col = textureCube(uCubeMap, dir).rgb;
+  // Negate X to match three.js's flipEnvMap=-1 convention for CubeTextureLoader
+  // textures (our raw shader doesn't go through three's env-map path). If the
+  // Milky Way band ever looks mirrored, remove this negation or swap px/nx.
+  if (uBgMode == 0) col = textureCube(uCubeMap, vec3(-dir.x, dir.y, dir.z)).rgb;
   else              col = vec3(0.02); // grid mode base
   if (uBgMode == 1 || uGridOverlay) { // lat/long grid lines
     float lat = asin(clamp(dir.y, -1.0, 1.0));

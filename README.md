@@ -18,7 +18,8 @@ npm test         # physics unit tests (Vitest)
 
 ## Backgrounds
 
-- Milky Way cubemap (drop faces in `assets/milkyway/`), lat/long grid, color-cube (dev).
+- **Milky Way cubemap** (bundled — ESO panorama by Serge Brunier / ESO, CC BY 4.0), lat/long grid, color-cube (dev).
+- Swap in your own sky: `npm run skybox -- panorama.jpg public/assets/milkyway 1024 jpg`. See `public/assets/milkyway/README.md`.
 
 ## Physics
 

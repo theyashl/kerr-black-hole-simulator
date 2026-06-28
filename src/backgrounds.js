@@ -11,7 +11,7 @@ export function loadBackground(renderer) {
   // dark texture so the app still runs (grid/color-cube modes are unaffected).
   let cubeTexture;
   try {
-    cubeTexture = loader.load(['px.png','nx.png','py.png','ny.png','pz.png','nz.png']);
+    cubeTexture = loader.load(['px.jpg','nx.jpg','py.jpg','ny.jpg','pz.jpg','nz.jpg']);
   } catch (e) {
     cubeTexture = null;
   }
