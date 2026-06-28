@@ -69,6 +69,24 @@ function requestRender() {
   });
 }
 
+// Continuous render loop — runs ONLY while the disk animation toggle is on, so
+// render-on-demand (and idle ~0% GPU) is preserved the rest of the time.
+let animating = false;
+const animClock = new THREE.Clock();
+function animationLoop() {
+  if (!settings.diskAnimate) { animating = false; return; } // stop -> back to on-demand
+  uniforms.uTime.value = animClock.getElapsedTime();
+  renderer.render(scene, camera);
+  requestAnimationFrame(animationLoop);
+}
+function syncAnimation() {
+  if (settings.diskAnimate && !animating) {
+    animating = true;
+    animClock.start();
+    requestAnimationFrame(animationLoop);
+  }
+}
+
 function updateCamera() {
   const a = uniforms.uSpin.value;
   const pos = orbitToPosition({
@@ -110,6 +128,7 @@ function applySettings() {
   uniforms.uDiskAnimate.value = settings.diskAnimate;
   uniforms.uDiskSpeed.value = settings.diskSpeed;
   updateCamera();
+  syncAnimation();
   requestRender();
 }
 
