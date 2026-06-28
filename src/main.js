@@ -3,6 +3,7 @@ import vertexShader from '../shaders/fullscreen.vert.glsl?raw';
 import fragmentShader from '../shaders/kerr.frag.glsl?raw';
 import { loadBackground } from './backgrounds.js';
 import { orbitToPosition, zamoTetrad } from './camera.js';
+import { initControls, initOrbit } from './controls.js';
 
 const canvas = document.getElementById('app');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
@@ -16,18 +17,23 @@ const bg = loadBackground(renderer);
 export const uniforms = {
   uResolution: { value: new THREE.Vector2() },
   uTime: { value: 0 },
-  uCamPos: { value: new THREE.Vector3(20, Math.PI / 2, 0) },
+  uCamPos: { value: new THREE.Vector3() },
   uE0: { value: new THREE.Vector4() },
   uER: { value: new THREE.Vector4() },
   uETH: { value: new THREE.Vector4() },
   uEPHI: { value: new THREE.Vector4() },
-  uSpin: { value: 0.7 },
+  uSpin: { value: 0 },
   uFov: { value: THREE.MathUtils.degToRad(60) },
-  uBgMode: { value: 2 }, // start on color-cube for verification
+  uBgMode: { value: 0 },
   uGridOverlay: { value: false },
   uCubeMap: { value: bg.cubeTexture },
-  uStepSize: { value: 0.04 },
-  uMaxSteps: { value: 600 },
+  uStepSize: { value: 0 },
+  uMaxSteps: { value: 0 },
+};
+
+const settings = {
+  spin: 0.7, inclinationDeg: 90, azimuthDeg: 0, radius: 20,
+  stepSize: 0.04, maxSteps: 600, bgMode: 1, gridOverlay: false,
 };
 
 function updateCamera() {
@@ -44,6 +50,18 @@ function updateCamera() {
   uniforms.uEPHI.value.set(...ephi);
 }
 
+function applySettings() {
+  uniforms.uSpin.value = settings.spin;
+  uniforms.uCamPos.value.set(settings.radius,
+    THREE.MathUtils.degToRad(settings.inclinationDeg),
+    THREE.MathUtils.degToRad(settings.azimuthDeg));
+  uniforms.uStepSize.value = settings.stepSize;
+  uniforms.uMaxSteps.value = Math.round(settings.maxSteps);
+  uniforms.uBgMode.value = Number(settings.bgMode);
+  uniforms.uGridOverlay.value = settings.gridOverlay;
+  updateCamera();
+}
+
 const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
 const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
 scene.add(quad);
@@ -56,11 +74,13 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
+initControls(settings, applySettings);
+initOrbit(canvas, settings, applySettings);
+applySettings();
+
 const clock = new THREE.Clock();
-updateCamera();
 function loop() {
   uniforms.uTime.value = clock.getElapsedTime();
-  updateCamera();
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
