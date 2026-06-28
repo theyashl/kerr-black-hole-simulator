@@ -14,7 +14,23 @@ npm test         # physics unit tests (Vitest)
 ## Controls
 
 - Drag to orbit, scroll to zoom.
-- Spin `a`, inclination, camera radius, RK4 step / max steps, background mode.
+- Spin `a`, inclination, camera radius, background mode.
+- **Quality preset** (Performance / Balanced / Quality) and a Performance folder with
+  render resolution, RK4 step, and max steps.
+
+## Performance
+
+This is a per-pixel geodesic ray tracer — it's GPU-heavy. To keep it laptop-friendly:
+
+- **Renders on demand** — a frame is drawn only when you change something, so a static
+  view uses ~0% GPU (no continuous render loop pinning the card).
+- **Resolution scale** — renders below native resolution and upscales (default 0.65).
+- **Quality presets** trade resolution / step count for speed. Start on **Balanced**;
+  use **Quality** only with a discrete GPU. Drop to **Performance** on integrated graphics.
+- Rendering pauses while the browser tab is hidden.
+
+A discrete GPU handles **Quality** comfortably; integrated graphics (Intel Iris, base
+Apple M-series) should stay on **Balanced**/**Performance**.
 
 ## Backgrounds
 

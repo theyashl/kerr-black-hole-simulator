@@ -7,12 +7,16 @@ import { initControls, initOrbit } from './controls.js';
 
 const canvas = document.getElementById('app');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// Render at 1x device pixels; the actual buffer size is driven by
+// settings.resolutionScale below (downscale then let CSS upscale the canvas).
+renderer.setPixelRatio(1);
 
 const scene = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-const bg = loadBackground(renderer);
+// requestRender is hoisted (function declaration), so it's safe to reference
+// here for the async cube-load callback that fires later.
+const bg = loadBackground(renderer, () => requestRender());
 
 export const uniforms = {
   uResolution: { value: new THREE.Vector2() },
@@ -32,8 +36,27 @@ export const uniforms = {
 
 const settings = {
   spin: 0.7, inclinationDeg: 90, azimuthDeg: 0, radius: 20,
-  stepSize: 0.04, maxSteps: 600, bgMode: 1, gridOverlay: false,
+  // Perf knobs — 'Balanced' defaults are laptop-friendly. Crank via Quality preset.
+  quality: 'Balanced', resolutionScale: 0.65,
+  stepSize: 0.05, maxSteps: 250, bgMode: 1, gridOverlay: false,
 };
+
+const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
+const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+scene.add(quad);
+
+// --- Render on demand -------------------------------------------------------
+// The image only changes when the user moves something, so we render a single
+// frame per change instead of looping forever (which pinned the GPU at 100%).
+let renderScheduled = false;
+function requestRender() {
+  if (renderScheduled || document.hidden) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderScheduled = false;
+    renderer.render(scene, camera);
+  });
+}
 
 function updateCamera() {
   const a = uniforms.uSpin.value;
@@ -49,7 +72,17 @@ function updateCamera() {
   uniforms.uEPHI.value.set(...ephi);
 }
 
+// Apply resolutionScale to the draw buffer; CSS keeps the canvas full-window so
+// the browser upscales the smaller buffer (big perf win on retina displays).
+function applyResolution() {
+  const w = Math.max(1, Math.round(window.innerWidth * settings.resolutionScale));
+  const h = Math.max(1, Math.round(window.innerHeight * settings.resolutionScale));
+  renderer.setSize(w, h, false);
+  uniforms.uResolution.value.set(w, h);
+}
+
 function applySettings() {
+  applyResolution();
   uniforms.uSpin.value = settings.spin;
   uniforms.uCamPos.value.set(settings.radius,
     THREE.MathUtils.degToRad(settings.inclinationDeg),
@@ -59,26 +92,13 @@ function applySettings() {
   uniforms.uBgMode.value = Number(settings.bgMode);
   uniforms.uGridOverlay.value = settings.gridOverlay;
   updateCamera();
+  requestRender();
 }
 
-const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
-const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
-scene.add(quad);
-
-function resize() {
-  const w = window.innerWidth, h = window.innerHeight;
-  renderer.setSize(w, h, false);
-  uniforms.uResolution.value.set(w * renderer.getPixelRatio(), h * renderer.getPixelRatio());
-}
-window.addEventListener('resize', resize);
-resize();
+window.addEventListener('resize', applySettings);
+// Don't schedule work while the tab is hidden; redraw once it's visible again.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) requestRender(); });
 
 initControls(settings, applySettings);
 initOrbit(canvas, settings, applySettings);
 applySettings();
-
-function loop() {
-  renderer.render(scene, camera);
-  requestAnimationFrame(loop);
-}
-loop();
