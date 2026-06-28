@@ -37,6 +37,25 @@ Apple M-series) should stay on **Balanced**/**Performance**.
 - **Milky Way cubemap** (bundled — ESO panorama by Serge Brunier / ESO, CC BY 4.0), lat/long grid, color-cube (dev).
 - Swap in your own sky: `npm run skybox -- panorama.jpg public/assets/milkyway 1024 jpg`. See `public/assets/milkyway/README.md`.
 
+## Accretion disk
+
+- Thin glowing disk in the equatorial plane, lensed by the same geodesics — the
+  far side bends up over the shadow, the underside curves below.
+- Inner edge defaults to the **ISCO** (spin-dependent: 6M at a=0, tightening as
+  spin rises); outer radius, brightness, and inner mode (ISCO/manual) are in the
+  **Disk** control folder.
+- Emission is a Novikov–Thorne temperature profile (`T ∝ (r_in/r)^¾`, blue-white
+  inner → red outer) modulated by procedural turbulence.
+- **Animate** swirls the gas (differential/Keplerian rotation). It uses a
+  continuous render loop, so it's **off by default** to keep idle GPU at ~0%.
+
+### Disk verification (browser)
+- [ ] Disk on, a=0, inclination ~75°: glowing ring with the far side lensed up
+      over the shadow and the underside visible below.
+- [ ] Increase spin → the disk inner edge tightens (ISCO mode).
+- [ ] Switch background to Milky Way: disk renders over the star field.
+- [ ] Animate on → smooth swirl; Animate off → still image, GPU idle.
+
 ## Physics
 
 Boyer–Lindquist coordinates, geometric units G=c=M=1. Hamiltonian geodesic
